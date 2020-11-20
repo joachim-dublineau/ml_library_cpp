@@ -6,16 +6,18 @@
 
 using namespace std;
 
+template<typename T>
 struct Condition{
-    int value;
+    T value;
     int label;
     int type; // 0 =, 1 <, 2 >, 3 <=, 4 >=
 };
 
+template<typename T>
 struct Split{
-    vector<vector<int>> mat1;
+    vector<vector<T>> mat1;
     vector<int> lab1;
-    vector<vector<int>> mat2;
+    vector<vector<T>> mat2;
     vector<int> lab2;
 };
 

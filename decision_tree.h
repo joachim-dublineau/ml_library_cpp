@@ -2,29 +2,33 @@
 #define DECISIONTREECLASSIFIER_H
 
 #include <unordered_map>
-#include <vector>
+#include <iostream>
 #include "condition.h"
 
 using namespace std;
 
+template<typename T>
 class DecisionTreeClassifier{
 
 public:
-    DecisionTreeClassifier(int);
+    DecisionTreeClassifier(int, int num_values_to_examine = 100);
     ~DecisionTreeClassifier();
     
-    void build_tree(vector<vector<int>>, vector<int>);
+    void build_tree(vector<vector<T>>, vector<int>);
+
     // marked as friend to access private element
-    friend ostream& operator<<(ostream& strm, const DecisionTreeClassifier& tree);
+    template<typename L>
+    friend ostream& operator<<(ostream& strm, const DecisionTreeClassifier<L>& tree);
 
 private:
     vector<int> keys;
     int input_shape;
-    unordered_map<int, Condition> conditions;
+    int number_values_to_test;
+    unordered_map<int, Condition<T>> conditions;
     unordered_map<int, vector<int>> nodes;
     double gini_index(vector<vector<int>>, vector<int>);
-    double eval_split(vector<vector<int>>, vector<int>, Condition);
-    Split do_split(vector<vector<int>>, vector<int>, Condition);
+    double eval_split(vector<vector<T>>, vector<int>, Condition<T>);
+    Split<T> do_split(vector<vector<T>>, vector<int>, Condition<T>);
 };
 
 #endif
