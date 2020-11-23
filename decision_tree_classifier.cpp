@@ -1,5 +1,5 @@
 #include <cmath>
-#include "decision_tree.h"
+#include "decision_tree_classifier.h"
 #include <iostream>
 #include <vector>
 #include <algorithm>

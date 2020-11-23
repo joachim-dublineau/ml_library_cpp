@@ -1,6 +1,6 @@
-#include "decision_tree.h"
-#include "decision_tree.cpp" // important to avoid linking issues
-#include "condition.h"
+#include "decision_tree_classifier.h"
+#include "decision_tree_classifier.cpp" // important to avoid linking issues
+#include "utils.h"
 #include <iostream>
 
 using namespace std;
