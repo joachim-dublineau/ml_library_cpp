@@ -8,11 +8,11 @@
 
 using namespace std;
 
-
 template<typename T>
-DecisionTreeClassifier<T>::DecisionTreeClassifier(int input_shape_, int num_values_to_examine){
+DecisionTreeClassifier<T>::DecisionTreeClassifier(int input_shape_, int max_depth_, int num_values_to_examine){
     input_shape = input_shape_;
     number_values_to_test = num_values_to_examine;
+    max_depth = max_depth_;
 };
 
 template<typename T>
@@ -20,7 +20,27 @@ DecisionTreeClassifier<T>::~DecisionTreeClassifier(){
 };
 
 template<typename T>
-void DecisionTreeClassifier<T>::build_tree(vector<vector<T>> matrix, vector<int> labels){
+int DecisionTreeClassifier<T>::compute_depth(int depth, int curr_index){
+    // This function computes the depth of a tree.
+    unordered_map<int,vector<int>>::iterator it;
+    bool is_node = false;
+    for (it = nodes.begin(); it != nodes.end(); it++){
+        if(curr_index == it->first){
+            is_node = true;
+            break;
+        }
+    }
+
+    if (is_node){
+        return max_(compute_depth(depth + 1, nodes.at(curr_index).at(0)), compute_depth(depth + 1, nodes.at(curr_index).at(1)));
+    }
+    else{
+        return depth;
+    }
+}
+
+template<typename T>
+void DecisionTreeClassifier<T>::build_tree(vector<vector<T>> matrix, vector<int> labels, int index_node){
     // This function builds the tree.
 
     //stop when all elements are of the same class or if matrix is empty.
@@ -28,7 +48,8 @@ void DecisionTreeClassifier<T>::build_tree(vector<vector<T>> matrix, vector<int>
     if (labels.size() > 0){
         int class_ = labels.at(0);
         for (int elem : labels){
-            if (elem != class_){
+            // if the leaf isn't pure or the depth is inferior to max_depth
+            if ((elem != class_) && (this->compute_depth() < max_depth)){
                 continue_build = true;
                 break;
             }
@@ -104,13 +125,89 @@ void DecisionTreeClassifier<T>::build_tree(vector<vector<T>> matrix, vector<int>
         
         // do_split and execute build tree on left node and right node
         Split<T> split = this->do_split(matrix, labels, best_condition);
-        this->build_tree(split.mat1, split.lab1);
-        this->build_tree(split.mat2, split.lab2);
+        this->build_tree(split.mat1, split.lab1, max_key+1);
+        this->build_tree(split.mat2, split.lab2, max_key+2);
     }
-    // else{
-    //     //do nothing
-    // }
+    else{
+        if (labels.size() > 0){
+            leafs[index_node] = labels.at(0);
+        }
+    }
 };
+
+template<typename T>
+vector<int> DecisionTreeClassifier<T>::predict(vector<vector<T>> matrix){
+    //This function computes the labels corresponding to a given matrix using the built tree.
+    vector<int> predicted_labels;
+    try{
+        if (conditions.size() == 0){
+            throw TreeNotBuiltException();
+        }
+
+        //get leafs keys
+        vector<int> leafs_keys;
+        unordered_map<int, int>::iterator it;
+        for (it = leafs.begin(); it != leafs.end(); it++){
+            leafs_keys.push_back(it->first);
+            // cout << " Leaf key " << it->first ;
+        }
+        cout << endl;
+        for (vector<T> row : matrix){
+            bool computed = false;
+            int curr_node_index = 0;
+            while (! computed){
+                
+                // Test if node is leaf
+                bool is_leaf = false;
+                for (int i = 0; i < leafs_keys.size(); i++){
+                    if (leafs_keys.at(i) == curr_node_index){
+                        is_leaf = true;
+                        break;
+                    }
+                }
+                // cout << "Curr Node " << curr_node_index << " Is leaf " << is_leaf << endl;
+
+                // if it isn't a leaf, apply the condition and move on
+                if (! is_leaf){
+                    Condition<T> curr_condition = conditions[curr_node_index];
+                    int type = curr_condition.type;
+                    if (type == 0){
+                        if (curr_condition.value == row[curr_condition.label]){
+                            curr_node_index = nodes[curr_node_index].at(1);
+                        }
+                        else{
+                            curr_node_index = nodes[curr_node_index].at(0);
+                        }
+                    }
+                    if (type == 1){
+                        if (curr_condition.value > row[curr_condition.label]){
+                            curr_node_index = nodes[curr_node_index].at(1);
+                        }
+                        else{
+                            curr_node_index = nodes[curr_node_index].at(0);
+                        }
+                    }
+                }
+
+                else{
+                    computed = true;
+                    predicted_labels.push_back(leafs[curr_node_index]);
+                }
+            }        
+        }
+    }
+    catch(TreeNotBuiltException e)
+    {
+        cerr << e.what() << endl;
+    } 
+    return predicted_labels; 
+}
+
+// template<typename T>
+// double DecisionTreeClassifier<T>::error(vector<int> predicted_labels, vector<int> labels){
+//     // This function will first predict the classes for a given matrix and then computes the error.
+//     // NLL LOSS
+// }
 
 template<typename T>
 ostream& operator<<(std::ostream &strm, const DecisionTreeClassifier<T> &tree) {
@@ -141,7 +238,7 @@ ostream& operator<<(std::ostream &strm, const DecisionTreeClassifier<T> &tree) {
             cout << endl;
         }
         else {
-            strm << "Leaf " << index << endl;
+            strm << "Leaf " << index << " Class " << tree.leafs.at(index) << endl;
         }
     }
 

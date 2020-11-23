@@ -1,5 +1,5 @@
-#ifndef CONDITION_H
-#define CONDITION_H
+#ifndef UTILS_H
+#define UTILS_H
 
 #include <vector>
 #include <iostream>
@@ -21,4 +21,11 @@ struct Split{
     vector<int> lab2;
 };
 
+struct TreeNotBuiltException : public exception {
+   const char * what () const throw () {
+      return "The tree must be built before any prediction.";
+   }
+};
+
+int max_(int a, int b);
 #endif
